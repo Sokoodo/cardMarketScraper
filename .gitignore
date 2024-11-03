@@ -1,0 +1,22 @@
+# Ignore Python cache files
+__pycache__/
+*.py[cod]
+
+# Ignore virtual environment directories
+venv/
+env/
+.env
+
+# Ignore Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# Ignore IDE specific files
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Ignore logs
+*.log
+
+# Ignore compiled files
+*.class

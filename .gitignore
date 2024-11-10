@@ -20,3 +20,8 @@ env/
 
 # Ignore compiled files
 *.class
+
+migrations/versions
+alembic.ini
+config.py
+environment.env

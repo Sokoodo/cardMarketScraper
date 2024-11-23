@@ -1,11 +1,11 @@
 # Test your FastAPI endpoints
 
-GET http://127.0.0.1:8000/
+POST http://127.0.0.1:8001/api/scrape?product_url=https%3A%2F%2Fwww.cardmarket.com%2Fit%2FPokemon%2FProducts%2FBooster-Boxes%2FSurging-Sparks-Booster-Box%3Flanguage%3D5%26minCondition%3D2
 Accept: application/json
 
 ###
 
-GET http://127.0.0.1:8000/hello/Moto
+GET http://127.0.0.1:8001/
 Accept: application/json
 
 ###

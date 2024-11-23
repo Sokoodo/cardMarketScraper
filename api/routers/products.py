@@ -1,44 +1,47 @@
-# app/api/routers/cards.py
-from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-from models import models
-from schemas import card
-from database import get_db
+from fastapi import APIRouter, HTTPException
+from urllib.parse import urlparse, parse_qs
+
+from scraping.scraper import fetch_product_data
+from utilities.common import ProductPartialParams
 
 router = APIRouter(
-    prefix="/cards",
-    tags=["cards"]
+    prefix="/products",
+    tags=["products"]
 )
 
 
-@router.get("/", response_model=List[card.CardResponse])
-async def get_cards(db: Session = Depends(get_db)):
-    return db.query(models.Product).all()
+def get_url_partial_params(product_url: str):
+    try:
+        parsed_url = urlparse(product_url)
+        path_parts = parsed_url.path.strip('/').split('/')
+
+        tcg = path_parts[1]
+        product_category = path_parts[3]
+        if product_category == "Singles":
+            product = path_parts[4] + "/" + path_parts[5]
+        else:
+            product = path_parts[4]
+
+        query_params = parse_qs(parsed_url.query)
+        language = query_params.get("language", [""])[0]
+        condition = query_params.get("minCondition", [""])[0]
+
+        partial_params = ProductPartialParams(product_url, product, product_category, language, condition, tcg)
+        return partial_params
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="Invalid URL format")
 
 
-@router.get("/{card_id}", response_model=card.CardResponse)
-async def get_card(card_id: int, db: Session = Depends(get_db)):
-    card = db.query(models.Product).filter(models.Product.id == card_id).first()
-    if not card:
-        raise HTTPException(status_code=404, detail="Card not found")
-    return card
+@router.post("/api/scrape")
+async def scrape_product(product_url: str):
+    # Extract variables from the URL
+    try:
+        partial_params = get_url_partial_params(product_url)
+    except HTTPException as e:
+        return e
 
+    # Start the scraping process with extracted data
+    result = fetch_product_data(partial_params)
 
-@router.post("/", response_model=card.CardResponse, status_code=status.HTTP_201_CREATED)
-async def create_card(card: card.CardCreate, db: Session = Depends(get_db)):
-    db_card = models.Product(name=card.name, current_price=card.current_price)
-    db.add(db_card)
-    db.commit()
-    db.refresh(db_card)
-    return db_card
-
-
-@router.delete("/{card_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_card(card_id: string, db: Session = Depends(get_db)):
-    card = db.query(models.Product).filter(models.Product.id_url == card_id).first()
-    if card:
-        db.delete(card)
-        db.commit()
-    else:
-        raise HTTPException(status_code=404, detail="Card not found")
+    # Return the scraping result
+    return result

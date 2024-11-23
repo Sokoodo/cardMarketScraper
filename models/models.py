@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, LargeBinary, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
@@ -9,54 +9,49 @@ Base = declarative_base()
 class Product(Base):
     __tablename__ = 'products'
 
-    id = Column(Integer, primary_key=True)
-    url = Column(String, unique=True, nullable=False)
-    name = Column(String, nullable=False)
-    image_url = Column(String, nullable=True)
+    id_url = Column(String, primary_key=True)
+    product_name = Column(String, nullable=False)
+    title = Column(String, nullable=False)
+    subtitle = Column(String, nullable=True)
+    image = Column(LargeBinary, nullable=True)
     product_type = Column(String, nullable=False)
     set_name = Column(String, nullable=True)
     card_number = Column(String, nullable=True)
-    product_subtype = Column(String, nullable=True)
-    language = Column(String, nullable=True)
+    language = Column(String, nullable=False)
+    condition = Column(String, nullable=True)
+    tcg_name = Column(String, nullable=False)
+    pokemon_species = Column(String, nullable=True)
+    current_min_price = Column(Float, nullable=False)
+    current_availability = Column(Float, nullable=False)
+    in_my_collection = Column(Boolean, default=False, nullable=False)
 
-    scrapes = relationship("Scrape", back_populates="product")
-    price_history = relationship("PriceHistory", back_populates="product")
+    scrapes = relationship("ScrapeData", back_populates="product")
+    owned_products = relationship("OwnedProduct", back_populates="product")
 
 
-class Scrape(Base):
+class OwnedProduct(Base):
+    __tablename__ = 'owned_products'
+
+    owned_product_id = Column(Integer, primary_key=True)
+    product_id = Column(String, ForeignKey('products.id_url'), nullable=False)
+    owned_qty = Column(Integer, nullable=False)
+    buy_price = Column(Float, nullable=False)
+    buy_date = Column(DateTime, default=datetime.utcnow, nullable=False)
+    buy_availability = Column(Integer, nullable=False)
+
+    product = relationship("Product", back_populates="owned_products")
+
+
+class ScrapeData(Base):
     __tablename__ = 'scrapes'
 
-    id = Column(Integer, primary_key=True)
-    product_id = Column(Integer, ForeignKey('products.id'), nullable=False)
-    scrape_date = Column(DateTime, default=datetime.utcnow)
+    scrape_id = Column(Integer, primary_key=True)
+    product_id_url = Column(String, ForeignKey('products.id_url'), nullable=False)
+    scrape_date = Column(DateTime, default=datetime.utcnow, nullable=False)
+    total_availability = Column(Integer, nullable=False)
+    detailed_availability = Column(Integer, nullable=False)
+    min_price = Column(Float, nullable=False)
+    max_price = Column(Float, nullable=False)
+    avg_price = Column(Float, nullable=False)
 
     product = relationship("Product", back_populates="scrapes")
-    product_data = relationship("ProductData", back_populates="scrape")
-
-
-class ProductData(Base):
-    __tablename__ = 'product_data'
-
-    id = Column(Integer, primary_key=True)
-    scrape_id = Column(Integer, ForeignKey('scrapes.id'), nullable=False)
-    condition = Column(String, nullable=True)
-    copies_available = Column(Integer, nullable=True)
-    price_min = Column(Float, nullable=True)
-    price_max = Column(Float, nullable=True)
-    price_avg = Column(Float, nullable=True)
-
-    scrape = relationship("Scrape", back_populates="product_data")
-
-
-class PriceHistory(Base):
-    __tablename__ = 'price_history'
-
-    id = Column(Integer, primary_key=True)
-    product_id = Column(Integer, ForeignKey('products.id'), nullable=False)  # Collegamento al prodotto
-    date = Column(DateTime, default=datetime.utcnow, nullable=False)  # Data e ora dello scrape per il prezzo
-    price_min = Column(Float, nullable=True)  # Prezzo minimo al momento dello scrape
-    price_max = Column(Float, nullable=True)  # Prezzo massimo al momento dello scrape
-    price_avg = Column(Float, nullable=True)  # Prezzo medio al momento dello scrape
-
-    # Relazione con la tabella Product
-    product = relationship("Product", back_populates="price_history")

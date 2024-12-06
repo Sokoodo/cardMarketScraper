@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from urllib.parse import urlparse, parse_qs
 from fastapi import HTTPException
 
-from models.models import Product
+from database.models.models import Product
 
 
 @dataclass

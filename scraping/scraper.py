@@ -1,10 +1,9 @@
 import logging
 import random
-from io import BytesIO
-
 import requests
-from PIL import Image
 
+from io import BytesIO
+from PIL import Image
 from selenium import webdriver
 from selenium.common import NoSuchElementException, TimeoutException
 from selenium.webdriver.common.by import By

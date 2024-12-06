@@ -1,8 +1,9 @@
+from datetime import datetime
+
 from fastapi import HTTPException
 
-from models.models import Product, ScrapeData
+from database.models.models import Product, ScrapeData
 from sqlalchemy.orm import Session
-from datetime import datetime
 from sqlalchemy.exc import SQLAlchemyError
 import logging
 
@@ -35,25 +36,28 @@ def save_product_data(session: Session, product_data: dict):
             session.add(product)
             session.commit()
             logger.info("New product added to the database with ID: %s", product_data['id_url'])
-        else:
+        elif product.current_min_price != product_data['min_price'] and product.current_availability != product_data[
+            'detailed_availability']:
             # Update only current_min_price and current_availability if the product exists
             product.current_min_price = product_data['min_price']
             product.current_availability = product_data['detailed_availability']
             session.commit()
             logger.info("Existing product updated with new min_price and availability for ID: %s",
                         product_data['id_url'])
+        else:
+            logger.info("Existing product not Updated: %s", product_data['id_url'])
 
-        # scrape_data = ScrapeData(
-        #     product_id_url=product_data['id_url'],
-        #     scrape_date=datetime.utcnow(),
-        #     total_availability=product_data['total_availability'],
-        #     detailed_availability=product_data['detailed_availability'],
-        #     min_price=product_data['min_price'],
-        #     max_price=product_data['max_price'],
-        #     avg_price=product_data['avg_price']
-        # )
-        # session.add(scrape_data)
-        # session.commit()
+        scrape_data = ScrapeData(
+            product_id_url=product_data['id_url'],
+            scrape_date=datetime.utcnow(),
+            total_availability=product_data['total_availability'],
+            detailed_availability=product_data['detailed_availability'],
+            min_price=product_data['min_price'],
+            max_price=product_data['max_price'],
+            avg_price=product_data['avg_price']
+        )
+        session.add(scrape_data)
+        session.commit()
         logger.info("Scrape data saved successfully for product ID: %s", product_data['id_url'])
 
     except SQLAlchemyError as e:

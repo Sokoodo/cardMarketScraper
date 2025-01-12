@@ -21,8 +21,6 @@ class Product(Base):
     condition = Column(String, nullable=True)
     tcg_name = Column(String, nullable=False)
     pokemon_species = Column(String, nullable=True)
-    current_min_price = Column(Float, nullable=False)
-    current_availability = Column(Float, nullable=False)
     in_my_collection = Column(Boolean, default=False, nullable=False)
 
     scrapes = relationship("ScrapeData", back_populates="product")

@@ -2,6 +2,9 @@ import logging
 
 from fastapi import HTTPException, Query, APIRouter
 from urllib.parse import unquote
+
+from sqlalchemy import func
+
 from database.database import SessionLocal
 from database.models.models import Product, ScrapeData
 from utilities.common import encode_product_image
@@ -28,6 +31,10 @@ async def get_product_details(id_url: str = Query(..., alias="id_url")):
             .all()
         )
 
+        latest_scrape = all_scrapes[0] if all_scrapes else None  # Takes the last scrape by date
+        latest_min_price = latest_scrape.min_price if latest_scrape else None
+        latest_availability = latest_scrape.detailed_availability if latest_scrape else None
+
         product_data = {
             "id_url": product.id_url,
             "product_name": product.product_name,
@@ -41,8 +48,8 @@ async def get_product_details(id_url: str = Query(..., alias="id_url")):
             "condition": product.condition,
             "tcg_name": product.tcg_name,
             "pokemon_species": product.pokemon_species,
-            "current_min_price": product.current_min_price,
-            "current_availability": product.current_availability,
+            "current_min_price": latest_min_price,
+            "current_availability": latest_availability,
             "in_my_collection": product.in_my_collection,
             "historical_scrape_data": [
                 {
@@ -70,23 +77,45 @@ async def get_product_details(id_url: str = Query(..., alias="id_url")):
 async def get_singles_pokemon():
     session = SessionLocal()
     try:
-        products = (
-            session.query(Product)
+        # Subquery to get the latest scrape date for each product
+        latest_scrapes = (
+            session.query(
+                ScrapeData.product_id_url,
+                func.max(ScrapeData.scrape_date).label("latest_date")
+            )
+            .group_by(ScrapeData.product_id_url)
+            .subquery()
+        )
+
+        # Join Product with the subquery and ScrapeData to fetch the latest scrape info
+        products_with_scrapes = (
+            session.query(
+                Product,
+                ScrapeData.min_price.label("current_min_price"),
+                ScrapeData.detailed_availability.label("current_availability"),
+            )
+            .join(latest_scrapes, Product.id_url == latest_scrapes.c.product_id_url)
+            .join(
+                ScrapeData,
+                (ScrapeData.product_id_url == latest_scrapes.c.product_id_url)
+                & (ScrapeData.scrape_date == latest_scrapes.c.latest_date),
+            )
             .filter(Product.product_type == "Singles", Product.tcg_name == "Pokemon")
-            .order_by(Product.current_min_price.desc())  # Order by current_min_price, descending
+            .order_by(ScrapeData.min_price.desc())
             .all()
         )
+
         results = [
             {
                 "id_url": product.id_url,
                 "title": product.title,
                 "image": encode_product_image(product.image),
                 "language": product.language,
-                "current_min_price": product.current_min_price,
-                "current_availability": product.current_availability,
-                "in_my_collection": product.in_my_collection
+                "in_my_collection": product.in_my_collection,
+                "current_min_price": current_min_price,
+                "current_availability": current_availability,
             }
-            for product in products
+            for product, current_min_price, current_availability in products_with_scrapes
         ]
 
         return results
@@ -101,23 +130,43 @@ async def get_singles_pokemon():
 async def get_sealed_pokemon():
     session = SessionLocal()
     try:
-        products = (
-            session.query(Product)
+        latest_scrapes = (
+            session.query(
+                ScrapeData.product_id_url,
+                func.max(ScrapeData.scrape_date).label("latest_date")
+            )
+            .group_by(ScrapeData.product_id_url)
+            .subquery()
+        )
+
+        products_with_scrapes = (
+            session.query(
+                Product,
+                ScrapeData.min_price.label("current_min_price"),
+                ScrapeData.detailed_availability.label("current_availability"),
+            )
+            .join(latest_scrapes, Product.id_url == latest_scrapes.c.product_id_url)
+            .join(
+                ScrapeData,
+                (ScrapeData.product_id_url == latest_scrapes.c.product_id_url)
+                & (ScrapeData.scrape_date == latest_scrapes.c.latest_date),
+            )
             .filter(Product.product_type != "Singles", Product.tcg_name == "Pokemon")
-            .order_by(Product.current_min_price.asc())  # Order by current_min_price, ascending
+            .order_by(ScrapeData.min_price.asc())
             .all()
         )
+
         results = [
             {
                 "id_url": product.id_url,
                 "title": product.title,
                 "image": encode_product_image(product.image),
                 "language": product.language,
-                "current_min_price": product.current_min_price,
-                "current_availability": product.current_availability,
-                "in_my_collection": product.in_my_collection
+                "in_my_collection": product.in_my_collection,
+                "current_min_price": current_min_price,
+                "current_availability": current_availability,
             }
-            for product in products
+            for product, current_min_price, current_availability in products_with_scrapes
         ]
 
         return results

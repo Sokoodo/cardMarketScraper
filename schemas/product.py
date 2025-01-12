@@ -37,8 +37,6 @@ class ProductBase(BaseModel):
     condition: Optional[str]
     tcg_name: str
     pokemon_species: Optional[str]
-    current_min_price: float
-    current_availability: float
 
 
 class ProductCreate(ProductBase):

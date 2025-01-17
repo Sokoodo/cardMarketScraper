@@ -112,6 +112,7 @@ async def get_singles_pokemon():
                 "image": encode_product_image(product.image),
                 "language": product.language,
                 "in_my_collection": product.in_my_collection,
+                "set_name": product.set_name,
                 "current_min_price": current_min_price,
                 "current_availability": current_availability,
             }

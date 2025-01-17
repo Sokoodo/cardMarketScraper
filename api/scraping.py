@@ -13,7 +13,7 @@ from utilities.common import get_url_partial_params, get_product_urls
 router = APIRouter()
 
 
-@router.get("/programmatic_scraping")  # TESTARE FUNZIONAMENTO IL 22/11
+@router.get("/programmatic_scraping")
 async def programmatic_scraping():
     session = SessionLocal()
     try:
@@ -66,7 +66,7 @@ async def scrape_bulk_products(product_urls: List[str]):
             except Exception as e:
                 results.append(
                     {"product_url": product_url, "status": "error", "message": "An unexpected error occurred"})
-            await asyncio.sleep(random.uniform(1, 4))
+            await asyncio.sleep(random.uniform(1, 2))
 
         return {"results": results}
     finally:

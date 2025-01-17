@@ -110,6 +110,7 @@ def get_owned_products():
                 "title": product.title,
                 "image": encode_product_image(product.image),
                 "language": product.language,
+                "set_name": product.set_name,
                 "in_my_collection": product.in_my_collection,
                 "owned_entries_number": owned_entries_number,
                 "current_min_price": current_min_price,

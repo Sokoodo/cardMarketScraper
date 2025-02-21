@@ -47,3 +47,14 @@ def get_url_partial_params(product_url: str):
 def get_product_urls(sess):
     products = sess.query(Product.id_url).all()  # Make sure `Product.id_url` is the correct column for URLs
     return [product[0] for product in products]
+
+
+def get_product_urls_by_product_type(sess, product_type: str):
+    """
+    Get product URLs from the database filtered by product type.
+    """
+    if product_type == "Singles":
+        products = sess.query(Product.id_url).filter(Product.product_type == "Singles").all()
+    else:
+        products = sess.query(Product.id_url).filter(Product.product_type != "Singles").all()
+    return [product[0] for product in products]

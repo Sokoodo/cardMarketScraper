@@ -8,7 +8,7 @@ from typing import List
 from database.database import SessionLocal
 from database.db_operations import save_product_data
 from scraping.scraper import fetch_product_data
-from utilities.common import get_url_partial_params, get_product_urls
+from utilities.common import get_url_partial_params, get_product_urls, get_product_urls_by_product_type
 
 router = APIRouter()
 
@@ -18,10 +18,38 @@ async def programmatic_scraping():
     session = SessionLocal()
     try:
         product_urls = get_product_urls(session)
-
         if not product_urls:
             raise HTTPException(status_code=404, detail="No product URLs found.")
+        return await scrape_bulk_products(product_urls)
+    finally:
+        session.close()
 
+
+@router.get("/programmatic_scraping_singles")
+async def scrape_singles():
+    """
+    Scrapes only Singles products.
+    """
+    session = SessionLocal()
+    try:
+        product_urls = get_product_urls_by_product_type(session, "Singles")
+        if not product_urls:
+            raise HTTPException(status_code=404, detail="No Singles products found.")
+        return await scrape_bulk_products(product_urls)
+    finally:
+        session.close()
+
+
+@router.get("/programmatic_scraping_sealed")
+async def scrape_sealed():
+    """
+    Scrapes only Sealed products.
+    """
+    session = SessionLocal()
+    try:
+        product_urls = get_product_urls_by_product_type(session, "Sealed")
+        if not product_urls:
+            raise HTTPException(status_code=404, detail="No Sealed products found.")
         return await scrape_bulk_products(product_urls)
     finally:
         session.close()

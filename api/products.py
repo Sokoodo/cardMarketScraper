@@ -51,6 +51,7 @@ async def get_product_details(id_url: str = Query(..., alias="id_url")):
             "current_min_price": latest_min_price,
             "current_availability": latest_availability,
             "in_my_collection": product.in_my_collection,
+            "owned_products_count": len(product.owned_products),
             "historical_scrape_data": [
                 {
                     "scrape_date": scrape.scrape_date,

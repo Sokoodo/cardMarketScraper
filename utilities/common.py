@@ -1,9 +1,12 @@
 import base64
+import logging
 from dataclasses import dataclass
 from urllib.parse import urlparse, parse_qs
 from fastapi import HTTPException
+from sqlalchemy import func
+from collections import defaultdict
 
-from database.models.models import Product
+from database.models.models import Product, OwnedProduct, ScrapeData
 
 
 @dataclass
@@ -58,3 +61,37 @@ def get_product_urls_by_product_type(sess, product_type: str):
     else:
         products = sess.query(Product.id_url).filter(Product.product_type != "Singles").all()
     return [product[0] for product in products]
+
+
+def get_total_current_price(sess, product_type: str):
+    my_condition = lambda: Product.product_type == "Singles" if product_type == "Singles" \
+        else Product.product_type != "Singles"
+    logging.info(f"Query {my_condition}")
+
+    owned_entries = (
+        sess.query(OwnedProduct)
+        .join(Product, OwnedProduct.product_id == Product.id_url)
+        .filter(my_condition())
+        .all()
+    )
+
+    product_ownership_counts = defaultdict(int)
+    for owned in owned_entries:
+        product_ownership_counts[owned.product_id] += 1
+
+    total_price = 0.0
+    for product_id_url, count in product_ownership_counts.items():
+        all_scrapes = (
+            sess.query(ScrapeData)
+            .filter_by(product_id_url=product_id_url)
+            .order_by(ScrapeData.scrape_date.desc())
+            .all()
+        )
+        latest_scrape = all_scrapes[0] if all_scrapes else None
+
+        if latest_scrape and latest_scrape.min_price:
+            total_price += count * latest_scrape.min_price
+
+    logging.info(f"Query {product_ownership_counts}")
+
+    return total_price

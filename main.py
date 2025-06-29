@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api import products, owned_products, scraping
+from api import products, owned_products, scraping, statistics
 
 app = FastAPI()
 
@@ -17,6 +17,7 @@ app.add_middleware(
 app.include_router(products.router, prefix="/api/products", tags=["Products"])
 app.include_router(owned_products.router, prefix="/api/owned_products", tags=["Owned Products"])
 app.include_router(scraping.router, prefix="/api/scraping", tags=["Scraping"])
+app.include_router(statistics.router, prefix="/api/statistics", tags=["Statistics"])
 
 
 @app.get("/")

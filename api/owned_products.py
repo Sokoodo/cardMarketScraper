@@ -125,4 +125,3 @@ def get_owned_products():
         raise HTTPException(status_code=500, detail="An error occurred")
     finally:
         session.close()
-

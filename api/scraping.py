@@ -1,9 +1,8 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 import asyncio
 import random
 import logging
 
-from fastapi import HTTPException
 from typing import List
 from database.database import SessionLocal
 from database.db_operations import save_product_data

@@ -66,7 +66,7 @@ def get_product_urls_by_product_type(sess, product_type: str):
 def get_total_current_price(sess, product_type: str):
     my_condition = lambda: Product.product_type == "Singles" if product_type == "Singles" \
         else Product.product_type != "Singles"
-    logging.info(f"Query {my_condition}")
+    # logging.info(f"Query {my_condition}")
 
     owned_entries = (
         sess.query(OwnedProduct)
@@ -92,6 +92,27 @@ def get_total_current_price(sess, product_type: str):
         if latest_scrape and latest_scrape.min_price:
             total_price += count * latest_scrape.min_price
 
-    logging.info(f"Query {product_ownership_counts}")
+    # logging.info(f"Query {product_ownership_counts}")
+
+    return total_price
+
+
+def get_total_bought_price(sess, product_type: str):
+    my_condition = lambda: Product.product_type == "Singles" if product_type == "Singles" \
+        else Product.product_type != "Singles"
+    logging.info(f"Query {my_condition}")
+
+    owned_entries = (
+        sess.query(OwnedProduct)
+        .join(Product, OwnedProduct.product_id == Product.id_url)
+        .filter(my_condition())
+        .all()
+    )
+
+    total_price = 0.0
+    for owned in owned_entries:
+        total_price += owned.buy_price
+
+    logging.info(f"Query {owned_entries}")
 
     return total_price
